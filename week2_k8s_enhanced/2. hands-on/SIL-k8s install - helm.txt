@@ -21,7 +21,7 @@
       Search for publicURL, then modify that to your FQDN
       Edit ingress: part
       Review jvb: part
-         Search for publicIPs, then modify that to your FQDN
+         Search for publicIPs, then modify that to your Node IP
 
    helm install jitsi-humble jitsi/jitsi-meet --values=values.yaml --namespace jitsi
       cf. helm upgrade jitsi-humble jitsi/jitsi-meet --values=values.yaml --namespace jitsi
