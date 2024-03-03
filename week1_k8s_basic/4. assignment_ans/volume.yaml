@@ -1,0 +1,16 @@
+# create persistent volume on cloud
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  labels:
+    name: postgres-pv
+spec:
+  capacity:
+    storage: 5Gi
+  storageClassName: do-block-storage
+  accessModes:
+    - ReadWriteOnce
+  gcePersistentDisk:
+    pdName: pg-data-disk
+    fsType: ext4

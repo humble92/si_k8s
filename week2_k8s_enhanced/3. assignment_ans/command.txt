@@ -1,0 +1,228 @@
+#----------------------------------------------------------
+# (Part 1) Install postgresql using Helm
+#----------------------------------------------------------
+
+We have a working knowledge of using helm. Let's use to install postgresql.
+
+See. https://artifacthub.io/packages/helm/bitnami/postgresql
+    $ kubectl create namespace postgresql
+    $ kubectl get namespace
+    $ helm install my-postgresql bitnami/postgresql --version 14.2.3 --namespace postgresql
+
+Question 1. Once it is installed, what is the output of the command below?
+    $ kubectl get pods -A | grep postgres
+    postgresql      my-postgresql-0                             1/1     Running   0             25s
+
+
+Question 2. Please scale-out postgresql as 3 instances. 
+After invoking the commands, send the same command above several times. What do you find something. Please describe that.
+
+    Use the command to scale the number of replicas to 3.
+    $ kubectl scale sts my-postgresql -n postgresql --replicas=3
+
+    StatefulSet controller scaled the number of replicas successfully.
+    $ kubectl get statefulset -A
+    postgresql   my-postgresql   3/3     15m
+
+    StatefulSet controller created each Pod sequentially with respect to its ordinal index.
+    The Pods in a StatefulSet based on a unique ordinal index that is assigned to each Pod by the StatefulSet controller. (`<statefulset name>-<ordinal index>`)
+    $ kubectl get pods -n postgresql
+    ```
+    NAME              READY   STATUS    RESTARTS   AGE
+    my-postgresql-0   1/1     Running   0          21m
+    my-postgresql-1   1/1     Running   0          18m
+    my-postgresql-2   1/1     Running   0          17m
+    ```
+
+    When I check the age or watch pods using `kubectl get pods -n postgresql --watch -l app=nginx`,
+    the `my-postgresql-1` pod is not launched until the `my-postgresql-0` Pod is Running(Pod Phase) and Ready(Pod condition).
+    By doing so, we observe that it waits for each Pod's predecessor to be Running and Ready before launching the subsequent Pod.
+
+
+    The StatefulSet controller created three PersistentVolumeClaims that are bound to three PersistentVolumes.
+    Get the PersistentVolumeClaims for postgresql:
+    $ kubectl get pv --namespace postgresql
+    ```
+    NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                  STORAGECLASS       VOLUMEATTRIBUTESCLASS   REASON   AGE
+    pvc-73b33393-6e92-483b-90ba-45d7aa34bd01   8Gi        RWO            Delete           Bound    postgresql/data-my-postgresql-2        do-block-storage   <unset>                          35m
+    pvc-86f313b5-87d3-4ca1-be8b-7780fc4b43e3   8Gi        RWO            Delete           Bound    postgresql/data-my-postgresql-1        do-block-storage   <unset>                          35m
+    pvc-b209cba5-4c09-488c-a536-069150eab152   8Gi        RWO            Delete           Bound    postgresql/data-my-postgresql-0        do-block-storage   <unset>                          39m
+    ```
+
+    Get the PersistentVolumes for postgresql:
+    $ kubectl get pvc -n postgresql
+    ```
+    NAME                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS       VOLUMEATTRIBUTESCLASS   AGE
+    data-my-postgresql-0   Bound    pvc-b209cba5-4c09-488c-a536-069150eab152   8Gi        RWO            do-block-storage   <unset>                 45m
+    data-my-postgresql-1   Bound    pvc-86f313b5-87d3-4ca1-be8b-7780fc4b43e3   8Gi        RWO            do-block-storage   <unset>                 41m
+    data-my-postgresql-2   Bound    pvc-73b33393-6e92-483b-90ba-45d7aa34bd01   8Gi        RWO            do-block-storage   <unset>                 41m
+    ```
+
+
+(Refs)
+- [Kubernetes - StatefulSet Basics](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#ordered-pod-creation)
+
+(Hint)
+$ kubectl get statefulset -A
+$ kubectl scale ...
+
+
+Question 3. Please scale-in postgresql as 1 instance. 
+After invoking the commands, send the same command above several times. What do you find something. Please describe that.
+
+    Scale-down postgresql StatefulSet to 1 instance:
+    $ kubectl scale sts my-postgresql -n postgresql --replicas=1
+    ```
+    NAME              READY   STATUS    RESTARTS   AGE
+    my-postgresql-0   1/1     Running   0          48m
+    ```
+
+    Check StatefulSet and Pods:
+    The controller deleted two Pod at a time, in reverse order with respect to its ordinal index.
+    $ kubectl get statefulset -A
+    $ kubectl get pods -n postgresql
+
+    Check PersistentVolumeClaims and PersistentVolumes:
+    $ kubectl get pv -n postgresql
+    $ kubectl get pvc -n postgresql
+
+    They are still three respectively. PersistentVolumes mounted to the Pods of a StatefulSet are *not* deleted when the StatefulSet's Pods are deleted.
+    Pod deletion is caused by scaling the StatefulSet down.
+
+    I understand that it is correct action, but I still can't find the reason..
+
+
+Question 4. How can we delete postgresql? Please write the command and execute that.
+    $ kubectl delete all --all -n postgresql
+    ```
+    pod "my-postgresql-0" deleted
+    service "my-postgresql" deleted
+    service "my-postgresql-hl" deleted
+    statefulset.apps "my-postgresql" deleted
+    ```
+
+    $ kubectl get service -n postgresql
+    ```
+    No resources found in postgresql namespace.
+    ```
+
+
+#----------------------------------------------------------
+# (Part 2) Operator
+#----------------------------------------------------------
+
+# cf. Operator Lifecycle Manager
+ - https://olm.operatorframework.io/docs/getting-started/
+ - https://github.com/operator-framework/operator-lifecycle-manager?tab=readme-ov-file
+ - https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md
+
+
+#######################
+# 1. Install OLM
+#######################
+
+git clone https://github.com/operator-framework/operator-lifecycle-manager.git
+
+# (Benefit) We can use the quick install command generating YAML that makes assumptions about the default catalogs that ship with upstream OLM.
+kubectl create -f deploy/upstream/quickstart/crds.yaml
+kubectl create -f deploy/upstream/quickstart/olm.yaml
+
+kubectl -n olm get deployments
+
+kubectl get packagemanifest -n olm
+
+
+
+#########################################
+# 2. Try to Install one operator
+#########################################
+
+Question 5. What is the output of the command below?
+$ kubectl get packagemanifest -n olm  | grep postgres
+```
+ext-postgres-operator                      Community Operators   2m39s
+postgresql                                 Community Operators   2m39s
+percona-postgresql-operator                Community Operators   2m39s
+cloud-native-postgresql                    Community Operators   2m39s
+postgresql-operator                        Community Operators   2m39s
+postgresql-operator-dev4devs-com           Community Operators   2m39s
+postgres-operator                          Community Operators   2m39s
+```
+
+# Instead of following https://olm.operatorframework.io/docs/getting-started/
+  $ brew install operator-sdk
+  $ operator-sdk olm install
+# we will use quick install command at operatorhub.io
+
+# Candidates
+
+https://operatorhub.io/operator/cloud-native-postgresql
+https://operatorhub.io/operator/postgresql
+V https://operatorhub.io/operator/cloudnative-pg
+https://operatorhub.io/operator/stackgres
+
+$ kubectl get csv -n operators
+```
+cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Pending
+```
+
+Question 6. Read the article below, then answer the questions:
+    https://operatorhub.io/how-to-install-an-operator#What-happens-when-I-execute-the-'Install'-command-presented-in-the-pop-up?
+    
+    What is the purpose and meaning of the command below?
+
+    1) kubectl get CatalogSource -n olm
+        - It represents a catalog of all the Operators found on OperatorHub.io
+        - OLM knows where to download the Operator
+        ```
+        NAME                    DISPLAY               TYPE   PUBLISHER        AGE
+        operatorhubio-catalog   Community Operators   grpc   OperatorHub.io   44m
+        ```
+
+    2) kubectl get sub -A
+        - It shows Subscription objects across the entire cluster
+        - Help easily identify which Operators are currently deployed in the cluster
+        - Subscription triggers the actual installation of the Operator and helps manage the lifecycle of that Operator
+        - Subscription object: a resource in Kubernetes used with the Operator Lifecycle Manager (OLM)
+        ```
+        NAMESPACE   NAME                PACKAGE          SOURCE                  CHANNEL
+        operators   my-cloudnative-pg   cloudnative-pg   operatorhubio-catalog   stable-v1
+        ```
+    
+    3) kubectl get OperatorGroup -A
+        - It shows OperatorGroups regardless of the namespace
+        - OperatorGroup: As one of Custom Resource Definition(CRD), group and definition operators
+        ```
+        NAMESPACE   NAME               AGE
+        olm         olm-operators      93m
+        operators   global-operators   93m
+        ```
+
+      3.1) kubectl get operator -n olm --selector=olm.operatorGroup=olm-operators
+        - Select Operators associated with 'olm-operators' OperatorGroup within the 'olm' namespace
+
+      3.2) kubectl get operator -n olm --selector=operators.operatorGroup=global-operators
+        - Select Operators associated with 'global-operators' OperatorGroup within the 'olm' namespace
+
+    4) kubectl get csv -A
+      - It retrieve information about ClusterServiceVersions(CSV) in a k8s cluster.
+      - CSV: a resource in the context of OLM in k8s that represents metadata and configuration for an operator
+      ```
+      NAMESPACE   NAME                              DISPLAY                       VERSION   REPLACES                          PHASE
+      olm         cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Pending
+      olm         packageserver                     Package Server                0.27.0                                      Succeeded
+      operators   cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Pending
+      ```
+
+
+
+Question 7. Install one of candidates above, and what is the results of above 4 commands in Quesion 6.
+
+    Wrote it in the previous answers.
+
+    (Hint. Useful command to debug)
+    $ kubectl describe csv <csv-name>
+
+
+Well done.
+Thanks a lot.

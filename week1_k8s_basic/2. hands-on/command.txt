@@ -26,7 +26,7 @@ docker run -p 80:80 registry.digitalocean.com/si-k8s-registry/my-python-app
 
 -----------------------------
 # Prepare web app deployment
-doctl kubernetes cluster create flask-app-yaml --tag do-tutorial --auto-upgrade=true --node-pool "name=mypool;count=2;auto-scale=true;min-nodes=1;max-nodes=3;tag=flask-si"
+doctl kubernetes cluster create week2 --tag week2 --auto-upgrade=true --node-pool "name=mypool;count=2;auto-scale=true;min-nodes=1;max-nodes=3;tag=week2"
 kubectl config get-contexts
 kubectl create -f deployment.yaml
 #kubectl apply -f deployment.yaml to update

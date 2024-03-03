@@ -62,8 +62,8 @@ doctl registry login
 docker build -t airflow-custom .
 docker buildx build --platform=linux/amd64 -t airflow-custom .
 docker tag airflow-custom registry.digitalocean.com/<your-registry-name>/airflow-custom
-docker tag airflow-custom registry.digitalocean.com/si-k8s-session/airflow-custom
-docker push registry.digitalocean.com/si-k8s-session/airflow-custom
+docker tag airflow-custom registry.digitalocean.com/si-airflow-jk/airflow-custom
+docker push registry.digitalocean.com/si-airflow-jk/airflow-custom
 
 helm show values apache-airflow/airflow > values.yaml
 # modify defaultAirflowRepository to your registry (registry.digitalocean.com/si-k8s-session/airflow-custom)
@@ -73,7 +73,7 @@ helm show values apache-airflow/airflow > values.yaml
 kubectl get secrets -n airflow
 # if kubernetes.io/dockerconfigjson not found, create a secret
 # UI regsitry file download
-# kubectl create secret generic regcred --from-file=.dockerconfigjson=<path/to/.docker/config.json> --type=kubernetes.io/dockerconfigjson -n airflow
+# kubectl create secret generic regcred --from-file=.dockerconfigjson="/Users/jonghyeokkim/Desktop/Coding/si_k8s/si_k8s/week3_airflow/3. hands-on_ans/docker-config.json" --type=kubernetes.io/dockerconfigjson -n airflow
 # registry:
 #   secretName: generic
 helm upgrade --install airflow apache-airflow/airflow -n airflow -f values.yaml --debug
@@ -84,6 +84,7 @@ kubectl port-forward svc/airflow-webserver 8080:8080 --namespace airflow
 docker pull dpage/pgadmin4
 docker run --name my-pgadmin -p 82:80 -e 'PGADMIN_DEFAULT_EMAIL=jk23oct@gmail.com' -e 'PGADMIN_DEFAULT_PASSWORD=password123' dpage/pgadmin4
 add postgres connection in UI
+docker run -p 82:80 -e 'PGADMIN_DEFAULT_EMAIL=jk23oct@gmail.com' -e 'PGADMIN_DEFAULT_PASSWORD=password123' dpage/pgadmin4
 
 5. DAG with GitSync
 Create a private key with ssh-keygen if not exists
