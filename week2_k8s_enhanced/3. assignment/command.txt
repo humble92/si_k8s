@@ -63,13 +63,13 @@ Question 5. What is the output of the command below?
 $ kubectl get packagemanifest -n olm  | grep postgres
 
 
-# Instead of following https://olm.operatorframework.io/docs/getting-started/, we will use quick install command at operatorhub.io
+# Instead of following https://olm.operatorframework.io/docs/getting-started/, we will use quick install command at https://operatorhub.io
 # Candidates
 
-https://operatorhub.io/operator/cloud-native-postgresql
-https://operatorhub.io/operator/postgresql
-https://operatorhub.io/operator/cloudnative-pg
-https://operatorhub.io/operator/stackgres
+https://operatorhub.io/operator/cloud-native-postgresql (O)
+https://operatorhub.io/operator/postgresql (X)
+https://operatorhub.io/operator/cloudnative-pg (O)
+https://operatorhub.io/operator/stackgres (X)
 
 
 Question 6. Read the article below, then answer the questions:
@@ -92,8 +92,66 @@ Question 7. Install one of candidates above, and what is the results of above 4 
 
     (Hint. Useful command to debug)
     $ kubectl describe csv <csv-name>
-
+    $ kubectl get events -n olm
 
 
 Well done.
 Thanks a lot.
+
+
+#########################################
+# FYI. operator operations
+#########################################
+
+To check installation (e.g.)
+    daniel@MCHP17No1:/mnt/c/Users/daniel.hwang/study/sil/jka236/si_k8s$ kubectl get sub -A
+    NAMESPACE   NAME                         PACKAGE                   SOURCE                  CHANNEL
+    operators   my-airflow-helm-operator     airflow-helm-operator     operatorhubio-catalog   alpha
+    operators   my-cloud-native-postgresql   cloud-native-postgresql   operatorhubio-catalog   stable
+
+    daniel@MCHP17No1:/mnt/c/Users/daniel.hwang/study/sil/jka236/si_k8s$ kubectl get csv -A
+    NAMESPACE         NAME                              DISPLAY                       VERSION   REPLACES                          PHASE
+    cert-manager      airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    cert-manager      cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    default           airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    default           cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    ingress-nginx     airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    ingress-nginx     cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    jitsi             airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    jitsi             cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    kube-node-lease   airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    kube-node-lease   cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    kube-public       airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    kube-public       cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    kube-system       airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    kube-system       cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    olm               airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    olm               cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+    olm               packageserver                     Package Server                0.18.3                                      Succeeded
+    operators         airflow-helm-operator.v0.0.1      Airflow Helm Operator         0.0.1                                       Succeeded
+    operators         cloud-native-postgresql.v1.16.2   EDB Postgres for Kubernetes   1.16.2    cloud-native-postgresql.v1.15.3   Succeeded
+
+To uninstall operator (e.g.)
+
+    kubectl get csv -A
+    kubectl delete csv cloud-native-postgresql.v1.16.2 -n operators
+    kubectl delete -f https://operatorhub.io/install/cloud-native-postgresql.yaml
+
+To check uninstallation:
+    daniel@MCHP17No1:/mnt/c/Users/daniel.hwang/study/sil/jka236/si_k8s$ kubectl delete csv cloud-native-postgresql.v1.16.2 -n operators
+    clusterserviceversion.operators.coreos.com "cloud-native-postgresql.v1.16.2" deleted
+
+    daniel@MCHP17No1:/mnt/c/Users/daniel.hwang/study/sil/jka236/si_k8s$ kubectl get csv -A
+    NAMESPACE         NAME                           DISPLAY                 VERSION   REPLACES   PHASE
+    cert-manager      airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    default           airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    ingress-nginx     airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    jitsi             airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    kube-node-lease   airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    kube-public       airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    kube-system       airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    olm               airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+    olm               packageserver                  Package Server          0.18.3               Succeeded
+    operators         airflow-helm-operator.v0.0.1   Airflow Helm Operator   0.0.1                Succeeded
+
+    (Then, pod is deleted automatically)

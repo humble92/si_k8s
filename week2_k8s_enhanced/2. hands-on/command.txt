@@ -24,7 +24,7 @@ kubectl get po -A
 kubectl get pv -A
 kubectl get pvc -A
 
-kubectl scale statefulset postgres --replicas=2
+kubectl scale statefulset postgres --replicas=3
 kubectl get po -A
 kubectl get pv -A
 kubectl get pvc -A
@@ -51,6 +51,7 @@ helm repo list vs helm list
 helm repo add
 helm repo update
 helm search repo
+helm search hub
 helm show values
 helm show chart 
 
@@ -87,7 +88,7 @@ helm show chart
 
 
 ###########################################################
-# Set up jitsi w/ kustomize
+# Option 1. Set up jitsi w/ kustomize
 ###########################################################
 See. si_k8s/week2_k8s_enhanced/2. hands-on/SIL-k8s install - kustomize.txt
 
@@ -95,7 +96,7 @@ https://meet.jit.si/
 https://github.com/jitsi/jitsi-meet
 
 ###########################################################
-# Set up jitsi w/ helm
+# Option 2. Set up jitsi w/ helm
 ###########################################################
 See. si_k8s/week2_k8s_enhanced/2. hands-on/SIL-k8s install - helm.txt
 
